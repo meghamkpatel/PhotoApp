@@ -1,31 +1,82 @@
 package com.example.photoeditor;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
-import android.content.Context;
 import android.content.pm.PackageManager;
-import android.graphics.Camera;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.hardware.Camera;
 import android.os.Build;
 import android.os.Bundle;
-import android.view.SurfaceHolder;
+import android.view.MotionEvent;
 import android.view.SurfaceView;
-import android.widget.FrameLayout;
+import android.view.View;
+import android.widget.Button;
+import android.widget.LinearLayout;
 
-import java.io.IOException;
+import androidx.appcompat.app.AppCompatActivity;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements View.OnTouchListener{
+    Camera mCamera;
+    private boolean isCameraInitialized;
+    private LinearLayout canvasLayout = null;
+    CameraPreview mPreview = null;
+    Button capture = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_camera_preview);
+        canvasLayout = (LinearLayout)findViewById(R.id.container);
+
+        mPreview = new CameraPreview(this, mCamera);
+
+        // Set this as the onTouchListener to process custom surfaceview ontouch event.
+        mPreview.setOnTouchListener(this);
+
+        // Add the custom surfaceview object to the layout.
+        canvasLayout.addView(mPreview);
+        capture = (Button) findViewById(R.id.capture);
+        capture.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                // TODO Auto-generated method stub
+                mPreview.captureImage();
+            }
+        });
+    }
+    @Override
+    public boolean onTouch(View view, MotionEvent motionEvent) {
+        if(view instanceof SurfaceView) {
+            view.invalidate();
+
+            float x = motionEvent.getX();
+            float y = motionEvent.getY();
+
+            mPreview.setStartX(x);
+
+            mPreview.setStartY(y);
+            // Create and set a red paint to custom surfaceview.
+            Paint paint = new Paint();
+            paint.setColor(Color.RED);
+            mPreview.setPaint(paint);
+
+            mPreview.drawGraph();
+
+            // Tell android os the onTouch event has been processed.
+            return true;
+        }
+        else{
+            // Tell android os the onTouch event has not been processed.
+            return false;
+        }
     }
 
+    // Permission to use camera
     private static final String[] PERMISSIONS = {
-        Manifest.permission.CAMERA
+            Manifest.permission.CAMERA
     };
     private static final int REQUEST_PERMISSIONS = 34;
     private static final int PERMISSIONS_COUNT = 1;
@@ -50,11 +101,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
-    private boolean isCameraInitialized;
-    private Camera mCamera = null;
-    private static SurfaceHolder myHolder;
-    private static CameraPreview mPreview;
-    private FrameLayout preview;
+
     @Override
     protected void onResume(){
         super.onResume();
@@ -64,55 +111,26 @@ public class MainActivity extends AppCompatActivity {
         }
         if(isCameraInitialized){
             mPreview = new CameraPreview(this, mCamera);
-            preview = findViewById(R.id.camera);
-            preview.addView(mPreview);
+            mPreview.setOnTouchListener(this);
+            canvasLayout = findViewById(R.id.container);
+            canvasLayout.addView(mPreview);
         }
     }
-    private static int rotation;
-    private void rotateCamera(){
-        if(mCamera != null){
-            rotation = this.getWindowManager().getDefaultDisplay().getRotation();
-            if(rotation ==0){
-                rotation = 90;
-            }else if(rotation == 1){
-                rotation = 0;
-            }else if(rotation == 2){
-                rotation = 270;
-            }else{
-                rotation = 180;
-            }
-        }
-    }
-    private class CameraPreview extends SurfaceView implements SurfaceHolder.Callback{
-        private static SurfaceHolder mHolder;
-        private static Camera mCamera;
+//    private static int rotation;
+//    private void rotateCamera(){
+//        if(mCamera != null){
+//            rotation = this.getWindowManager().getDefaultDisplay().getRotation();
+//            if(rotation ==0){
+//                rotation = 90;
+//            }else if(rotation == 1){
+//                rotation = 0;
+//            }else if(rotation == 2){
+//                rotation = 270;
+//            }else{
+//                rotation = 180;
+//            }
+//        }
+//    }
 
-        private CameraPreview(Context context, Camera camera){
-            super(context);
-            mCamera = camera;
-            mHolder = getHolder();
-            mHolder.addCallback(this);
-        }
-        // surfaceView class
-        public void surfaceCreated(SurfaceHolder holder){
-            myHolder = holder;
-            try{
-                mCamera.setPreviewDisplay(holder);
-                mCamera.startPreview();
-            }catch(IOException e){
-                e.printStackTrace();
-            }
-        }
 
-        @Override
-        public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int i1, int i2) {
-
-        }
-
-        @Override
-        public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
-
-        }
-
-    }
 }
