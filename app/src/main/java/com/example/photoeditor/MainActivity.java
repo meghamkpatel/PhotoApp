@@ -10,17 +10,19 @@ import android.hardware.Camera;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.MotionEvent;
+import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener{
     Camera mCamera;
     private boolean isCameraInitialized;
-    private LinearLayout canvasLayout = null;
+    private ConstraintLayout canvasLayout = null;
     CameraPreview mPreview = null;
     Button capture = null;
 
@@ -28,10 +30,10 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera_preview);
-        canvasLayout = (LinearLayout)findViewById(R.id.container);
+        canvasLayout = (ConstraintLayout)findViewById(R.id.container);
 
         mPreview = new CameraPreview(this, mCamera);
-
+        mCamera = android.hardware.Camera.open();
         // Set this as the onTouchListener to process custom surfaceview ontouch event.
         mPreview.setOnTouchListener(this);
 
@@ -116,21 +118,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             canvasLayout.addView(mPreview);
         }
     }
-//    private static int rotation;
-//    private void rotateCamera(){
-//        if(mCamera != null){
-//            rotation = this.getWindowManager().getDefaultDisplay().getRotation();
-//            if(rotation ==0){
-//                rotation = 90;
-//            }else if(rotation == 1){
-//                rotation = 0;
-//            }else if(rotation == 2){
-//                rotation = 270;
-//            }else{
-//                rotation = 180;
-//            }
-//        }
-//    }
 
 
 }

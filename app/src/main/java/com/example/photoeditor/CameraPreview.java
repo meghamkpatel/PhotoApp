@@ -9,12 +9,13 @@ import android.hardware.Camera;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.widget.Toast;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback{
+public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback, Camera.ShutterCallback, Camera.PictureCallback{
     private SurfaceHolder mHolder = null;
     private SurfaceView mView;
     private Camera.PictureCallback rawCallback;
@@ -33,7 +34,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         paint.setColor(Color.RED);
         mCamera = camera;
         mView = (SurfaceView) findViewById(R.id.surfaceviewprev);
-        mHolder = mView.getHolder();
+        mHolder = getHolder();
         mHolder.addCallback(this);
         mHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
         rawCallback = new Camera.PictureCallback() {
@@ -92,18 +93,48 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     }
 
     public void captureImage(){
-        mCamera.takePicture(shutterCallback, rawCallback, jpegCallback);
+        mCamera.takePicture(this, null, null, this);
     }
 
     // surfaceView class
     public void surfaceCreated(SurfaceHolder holder){
         drawGraph();
+        try {
+            // create the surface and start camera preview
+            if (mCamera == null) {
+                mCamera.setPreviewDisplay(holder);
+                mCamera.startPreview();
+            }
+        } catch (IOException e) {
+            Log.d(VIEW_LOG_TAG, "Error setting camera preview: " + e.getMessage());
+        }
     }
-
+    public void refreshCamera(Camera camera) {
+        if (mHolder.getSurface() == null) {
+            // preview surface does not exist
+            return;
+        }
+        // stop preview before making changes
+        try {
+            mCamera.stopPreview();
+        } catch (Exception e) {
+            // ignore: tried to stop a non-existent preview
+        }
+        // set preview size and make any resize, rotate or
+        // reformatting changes here
+        // start preview with new settings
+        mCamera = camera;
+        try {
+            mCamera.setPreviewDisplay(mHolder);
+            mCamera.startPreview();
+        } catch (Exception e) {
+            Log.d(VIEW_LOG_TAG, "Error starting camera preview: " + e.getMessage());
+        }
+    }
 
     @Override
     public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int i1, int i2) {
-
+        refreshCamera(mCamera);
     }
 
     @Override
@@ -119,4 +150,13 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         this.paint = paint;
     }
 
+    @Override
+    public void onShutter() {
+        Toast.makeText(getContext(), "Click!", Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onPictureTaken(byte[] bytes, Camera camera) {
+
+    }
 }
